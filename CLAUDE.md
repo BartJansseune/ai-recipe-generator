@@ -1,18 +1,32 @@
 # AI Recipe Generator - Project Context
 
 ## Project Overview
-An AI-powered recipe generator web application built with React, TypeScript, and AWS Amplify. This application generates personalized recipes using AI capabilities, with user authentication and data management powered by AWS backend services.
+A fully functional AI-powered recipe generator web application built with React, TypeScript, and AWS Amplify. Users authenticate, input ingredients, and receive AI-generated recipes powered by Claude 3 Sonnet via AWS Bedrock.
+
+## Current Status: ✅ Fully Functional
+
+The application is **complete and operational** with:
+- ✅ AWS Amplify backend deployed (auth + API)
+- ✅ User authentication with Cognito
+- ✅ AWS Bedrock integration with Claude 3 Sonnet
+- ✅ Recipe generation UI with loading states
+- ✅ TypeScript types properly configured
+- ✅ Frontend integrated with backend services
 
 ## Tech Stack
 
 ### Frontend
 - **React 19** - UI library with latest features
-- **TypeScript 5.9** - Type-safe development
+- **TypeScript 5.9** - Type-safe development with strict mode
 - **Vite 7** - Fast build tool and dev server
+- **AWS Amplify UI React** - Pre-built authentication components
 - **CSS** - Component styling
 
 ### Backend & Infrastructure
-- **AWS Amplify Gen 2** - Backend framework with authentication and data management
+- **AWS Amplify Gen 2** - Backend framework with TypeScript-first configuration
+- **AWS Cognito** - User authentication and authorization
+- **AWS AppSync** - GraphQL API with custom resolvers
+- **AWS Bedrock** - Claude 3 Sonnet AI model (eu-west-1)
 - **AWS CDK 2** - Infrastructure as Code
 - **Node.js** - Runtime environment
 
@@ -24,46 +38,105 @@ An AI-powered recipe generator web application built with React, TypeScript, and
 
 ```
 ai-recipe-generator/
-├── amplify/              # AWS Amplify backend configuration
-│   ├── auth/            # Authentication resource definitions
-│   ├── data/            # Data/API resource definitions
-│   ├── backend.ts       # Main backend definition
-│   ├── package.json     # Backend dependencies
-│   └── tsconfig.json    # Backend TypeScript config
-├── src/                 # Frontend source code
-│   ├── assets/         # Static assets (images, etc.)
-│   ├── App.tsx         # Main application component
-│   ├── main.tsx        # Application entry point
-│   ├── App.css         # Application styles
-│   └── index.css       # Global styles
-├── public/             # Public static assets
-├── package.json        # Project dependencies and scripts
-├── vite.config.ts      # Vite configuration
-├── tsconfig.json       # TypeScript base config
-├── tsconfig.app.json   # App TypeScript config
-├── tsconfig.node.json  # Node/build TypeScript config
-├── eslint.config.js    # ESLint configuration
-└── index.html          # HTML entry point
+├── amplify/                    # AWS Amplify backend configuration
+│   ├── auth/
+│   │   └── resource.ts        # Cognito user pool configuration
+│   ├── data/
+│   │   ├── resource.ts        # GraphQL schema with askBedrock query
+│   │   └── bedrock.js         # Bedrock HTTP resolver (request/response)
+│   ├── backend.ts             # Combines resources + Bedrock data source
+│   ├── package.json           # Backend dependencies
+│   └── tsconfig.json          # Backend TypeScript config
+├── src/                       # Frontend source code
+│   ├── assets/               # Static assets (SVGs, images)
+│   ├── App.tsx               # Main recipe generator component
+│   ├── main.tsx              # Entry point with Authenticator wrapper
+│   ├── App.css               # Component styles
+│   └── index.css             # Global styles
+├── public/                    # Public static assets
+├── amplify_outputs.json       # Generated config (created by sandbox/deploy)
+├── package.json              # Project dependencies and scripts
+├── vite.config.ts            # Vite configuration
+├── tsconfig.json             # TypeScript base config
+├── tsconfig.app.json         # App TypeScript config
+├── tsconfig.node.json        # Node/build TypeScript config
+├── eslint.config.js          # ESLint configuration
+├── index.html                # HTML entry point
+├── CLAUDE.md                 # This file - project context for AI assistants
+└── README.md                 # User-facing documentation
 ```
 
 ## Key Files
 
 ### Frontend
-- [src/App.tsx](src/App.tsx) - Main React component, currently showing default Vite template
-- [src/main.tsx](src/main.tsx) - React app initialization and root rendering
+- [src/App.tsx](src/App.tsx) - Recipe generator UI with form, loading states, and results display
+  - Imports Schema type with `import type` (TypeScript types only)
+  - Configures Amplify client with userPool auth mode
+  - Handles form submission and calls askBedrock query
+  - Shows loading animations with Loader and Placeholder components
+
+- [src/main.tsx](src/main.tsx) - React app initialization with Authenticator
+  - Wraps App in `<Authenticator>` component for auth UI
+  - Imports from "App.tsx" (not "App.jsx")
+
 - [vite.config.ts](vite.config.ts) - Vite build configuration
 
 ### Backend
-- [amplify/backend.ts](amplify/backend.ts) - AWS Amplify backend configuration combining auth and data resources
-- [amplify/auth/resource.ts](amplify/auth/resource.ts) - User authentication configuration
-- [amplify/data/resource.ts](amplify/data/resource.ts) - Data models and API definitions
+- [amplify/backend.ts](amplify/backend.ts) - Main backend definition
+  - Defines backend with auth + data resources
+  - Adds HTTP data source for Bedrock API (eu-west-1)
+  - Grants IAM permissions to invoke Claude 3 Sonnet model
+
+- [amplify/auth/resource.ts](amplify/auth/resource.ts) - Cognito configuration
+  - Email-based authentication
+  - Custom verification email for recipe app
+
+- [amplify/data/resource.ts](amplify/data/resource.ts) - GraphQL API schema
+  - Defines `BedrockResponse` custom type (body, error fields)
+  - Defines `askBedrock` query with ingredients array argument
+  - Requires authenticated users
+  - Uses custom handler with bedrock.js and bedrockDS data source
+
+- [amplify/data/bedrock.js](amplify/data/bedrock.js) - Bedrock HTTP resolver
+  - `request()` - Constructs HTTP request to Bedrock API with prompt
+  - `response()` - Parses Bedrock response and extracts recipe text
 
 ### Configuration
-- [package.json](package.json) - Dependencies: aws-amplify, react, react-dom
-- [tsconfig.json](tsconfig.json) - TypeScript configuration with strict mode
+- [package.json](package.json) - Dependencies include aws-amplify, @aws-amplify/ui-react, react 19
+- [tsconfig.json](tsconfig.json) - TypeScript strict mode enabled
 - [eslint.config.js](eslint.config.js) - Linting rules for TypeScript and React
+- [amplify_outputs.json](amplify_outputs.json) - Auto-generated by sandbox/deploy (git-ignored)
+
+## Architecture
+
+### Authentication Flow
+1. User visits app → sees Authenticator component (sign-up/sign-in)
+2. User creates account → receives email verification code
+3. User verifies email → authenticates with Cognito
+4. App receives auth tokens → can call authenticated API
+
+### Recipe Generation Flow
+1. User enters ingredients in form (comma-separated)
+2. Form submission calls `amplifyClient.queries.askBedrock()`
+3. AppSync routes to custom HTTP resolver (bedrock.js)
+4. HTTP resolver constructs Bedrock API request with prompt
+5. Bedrock invokes Claude 3 Sonnet with ingredients
+6. Claude generates recipe text
+7. Response flows back through resolver to frontend
+8. UI displays generated recipe
+
+### Data Source Configuration
+- GraphQL API uses HTTP data source (not Lambda)
+- Direct integration with Bedrock API endpoint
+- IAM permissions grant AppSync access to invoke Claude model
+- Request/response transformations in bedrock.js
 
 ## Development Workflow
+
+### Running the App
+Two terminals required:
+1. **Terminal 1**: `npx ampx sandbox` - Deploys backend to AWS, watches for changes
+2. **Terminal 2**: `npm run dev` - Runs Vite dev server on http://localhost:5173
 
 ### Available Scripts
 ```bash
@@ -74,94 +147,129 @@ npm run preview   # Preview production build locally
 ```
 
 ### Development Server
-- Runs on Vite's default port (typically http://localhost:5173)
-- Hot Module Replacement (HMR) enabled for fast development
-- TypeScript compilation happens in real-time
+- Runs on http://localhost:5173 (Vite default)
+- Hot Module Replacement (HMR) enabled
+- TypeScript compilation in real-time
 
-### Building
-- TypeScript compilation with `tsc -b` flag (build mode)
-- Vite bundles the application for production
-- Output directory: `dist/`
+### Sandbox vs Deploy
+- **`npx ampx sandbox`** - Per-developer cloud environment, auto-updates, easy cleanup
+- **`npx ampx deploy`** - Permanent production environment, manual updates
 
-## AWS Amplify Backend
+## Common Issues & Solutions
 
-### Authentication
-- Configured in [amplify/auth/resource.ts](amplify/auth/resource.ts)
-- Handles user sign-up, sign-in, and session management
+### Import Errors
+**Problem**: `The requested module does not provide an export named 'Schema'`
+**Solution**: Use `import type { Schema }` not `import { Schema }` in App.tsx
+- Schema is a TypeScript type, not a runtime value
+- Backend files shouldn't be bundled into frontend
 
-### Data/API
-- Configured in [amplify/data/resource.ts](amplify/data/resource.ts)
-- Defines data models and GraphQL API schema
-- Provides real-time data synchronization capabilities
+### Module Resolution Errors
+**Problem**: App doesn't load, module not found
+**Solution**: Check imports in main.tsx - should import from "App.tsx" not "App.jsx"
 
-### Backend Initialization
-The [amplify/backend.ts](amplify/backend.ts) file combines all backend resources using `defineBackend()`. To add new resources like storage or functions, define them in the amplify directory and add to the backend definition.
+### Authentication Errors
+**Problem**: Can't sign in or API calls fail with auth errors
+**Solution**:
+- Ensure sandbox is running and fully deployed
+- Check that amplifyClient uses `authMode: "userPool"`
+- Verify askBedrock query has `.authorization((allow) => [allow.authenticated()])`
 
-## Current State
-
-The application currently contains:
-- Default Vite + React template UI (counter example)
-- AWS Amplify backend infrastructure configured but not yet integrated into the frontend
-- Basic project structure ready for AI recipe generation features
-
-## Next Development Steps
-
-Based on the project setup, likely next steps include:
-1. Integrate AWS Amplify into the frontend (configure and initialize Amplify client)
-2. Implement authentication UI (sign-up, sign-in components)
-3. Design and implement recipe data models in amplify/data
-4. Create AI recipe generation logic (likely using AWS services like Bedrock or Lambda)
-5. Build recipe display and management UI components
-6. Add recipe search, filtering, and favorites functionality
+### Bedrock Errors
+**Problem**: Recipe generation fails or returns errors
+**Solution**:
+- Verify Claude 3 Sonnet model is enabled in AWS Bedrock (eu-west-1 region)
+- Check IAM permissions in backend.ts include correct model ARN
+- Review CloudWatch logs for AppSync resolver errors
 
 ## Important Notes
 
-### TypeScript
+### TypeScript Types
+- **CRITICAL**: Backend types must use `import type`, never regular `import`
 - Strict mode enabled for type safety
-- Separate configs for app code ([tsconfig.app.json](tsconfig.app.json)) and build tools ([tsconfig.node.json](tsconfig.node.json))
+- Separate configs: tsconfig.app.json (frontend), tsconfig.node.json (build tools)
 
 ### AWS Amplify Gen 2
-- Uses the new Gen 2 architecture with TypeScript-first configuration
-- Backend resources are defined in code, not JSON configuration
+- TypeScript-first configuration (no JSON config files)
+- Backend resources defined in code
+- Hot-reload support in sandbox mode
 - Documentation: https://docs.amplify.aws/react/build-a-backend/
+
+### Bedrock Configuration
+- Model: Claude 3 Sonnet (`anthropic.claude-3-sonnet-20240229-v1:0`)
+- Region: eu-west-1
+- To change region/model: Update backend.ts (endpoint, region, ARN) and bedrock.js (model path)
 
 ### Git
 - Main branch: `main`
-- Recent changes: Added AWS Amplify dependencies and configuration
-- Untracked: `amplify/` directory (needs to be committed)
+- amplify_outputs.json is git-ignored (regenerated by sandbox/deploy)
+- amplify/ directory should be committed
 
-## Dependencies to Know
+## Dependencies
 
 ### Core Dependencies
 - `aws-amplify` (^6.16.2) - AWS Amplify client library
-- `react` (^19.2.0) - Latest React with new features
+- `@aws-amplify/ui-react` (^6.15.0) - Pre-built UI components (Authenticator, Loader, Placeholder)
+- `react` (^19.2.0) - Latest React
 - `react-dom` (^19.2.0) - React DOM rendering
 
 ### Development Dependencies
 - `@aws-amplify/backend` (^1.21.0) - Backend resource definitions
-- `@aws-amplify/backend-cli` (^1.8.2) - Amplify CLI for deployment
+- `@aws-amplify/backend-cli` (^1.8.2) - Amplify CLI (ampx)
 - `vite` (^7.3.1) - Build tool
 - `typescript` (^5.9.3) - TypeScript compiler
 - `aws-cdk-lib` (^2.234.1) - AWS CDK for infrastructure
+- `constructs` (^10.5.0) - CDK constructs
 
 ## Common Tasks
 
-### Adding a New Component
+### Modifying the Recipe Prompt
+Edit [amplify/data/bedrock.js](amplify/data/bedrock.js:5) - change the prompt construction logic in the `request()` function.
+
+### Changing AI Model
+1. Update [amplify/backend.ts](amplify/backend.ts:25) - modify the model ARN in PolicyStatement
+2. Update [amplify/data/bedrock.js](amplify/data/bedrock.js:9) - change resourcePath to new model
+3. Redeploy: The sandbox will auto-redeploy when you save
+
+### Adding New Backend Resources
+1. Create resource file in `amplify/` (e.g., `amplify/storage/resource.ts`)
+2. Import and add to `defineBackend()` in [amplify/backend.ts](amplify/backend.ts:6-9)
+3. Sandbox will automatically redeploy
+
+### Styling Changes
+- Component styles: [src/App.css](src/App.css)
+- Global styles: [src/index.css](src/index.css)
+- Authenticator styles: Imported via `@aws-amplify/ui-react/styles.css`
+
+### Adding New UI Components
 1. Create file in `src/components/` (create directory if needed)
 2. Export component as default or named export
-3. Import in [src/App.tsx](src/App.tsx) or relevant parent component
+3. Import in [src/App.tsx](src/App.tsx) or relevant parent
 
-### Adding Backend Resources
-1. Create resource file in `amplify/` (e.g., `amplify/storage/resource.ts`)
-2. Import and add to `defineBackend()` in [amplify/backend.ts](amplify/backend.ts)
-3. Deploy using Amplify CLI: `npx ampx sandbox` (dev) or `npx ampx deploy` (prod)
+## Future Enhancement Ideas
 
-### Styling
-- Component-specific styles in `.css` files alongside components
-- Global styles in [src/index.css](src/index.css)
-- Consider adding a CSS-in-JS library or Tailwind CSS if more complex styling is needed
+Potential features to add:
+- **Recipe History** - Store generated recipes in DynamoDB, display user's past recipes
+- **Favorites** - Allow users to save and bookmark favorite recipes
+- **Dietary Filters** - Add options for vegetarian, vegan, gluten-free, etc.
+- **Serving Size** - Let users specify number of servings
+- **Recipe Sharing** - Generate shareable links for recipes
+- **Image Generation** - Use Stable Diffusion on Bedrock to generate recipe images
+- **Streaming Responses** - Stream recipe text as it's generated for better UX
+- **Advanced Search** - Search recipes by cuisine type, cooking time, difficulty
+- **User Profiles** - Add profile pages with preferences and dietary restrictions
 
-### Environment Variables
-- Vite uses `VITE_` prefix for environment variables
+## Environment Variables
+
+Vite uses `VITE_` prefix for environment variables:
 - Create `.env` file for local development (not committed)
 - Access via `import.meta.env.VITE_VARIABLE_NAME`
+- Currently not needed (amplify_outputs.json handles all config)
+
+## Testing Notes
+
+To test the application:
+1. **Authentication**: Create multiple test accounts, verify email flow works
+2. **Recipe Generation**: Test with various ingredient combinations
+3. **Error Handling**: Test with empty ingredients, invalid input, network failures
+4. **Loading States**: Verify loading animations appear during generation
+5. **Responsive Design**: Test on mobile, tablet, desktop sizes
