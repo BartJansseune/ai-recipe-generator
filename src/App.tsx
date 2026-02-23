@@ -27,13 +27,25 @@ function App() {
         ingredients: [formData.get("ingredients")?.toString() || ""],
       });
 
-      if (!errors) {
-        setResult(data?.body || "No data returned");
+      console.log("Response data:", data);
+      console.log("Response errors:", errors);
+
+      if (!errors && data) {
+        if (data.error) {
+          setResult(`Error: ${data.error}`);
+        } else if (data.body) {
+          setResult(data.body);
+        } else {
+          setResult("No data returned from Bedrock. Check console for details.");
+        }
       } else {
-        console.log(errors);
+        const errorMessage = errors ? JSON.stringify(errors, null, 2) : "Unknown error";
+        setResult(`GraphQL Error: ${errorMessage}`);
+        console.error("GraphQL errors:", errors);
       }
     } catch (e) {
-      alert(`An error occurred: ${e}`);
+      console.error("Exception:", e);
+      setResult(`Exception occurred: ${e}`);
     } finally {
       setLoading(false);
     }
