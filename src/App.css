@@ -91,11 +91,78 @@
 .result {
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
-  border-radius: 4px;
-  padding: 15px;
-  white-space: pre-wrap;
+  border-radius: 8px;
+  padding: 20px;
   word-wrap: break-word;
-  color: black;
-  font-weight: bold;
-  text-align: left; /* Align text to the left */
+  color: #1a202c;
+  text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Markdown styling */
+.result h1,
+.result h2,
+.result h3 {
+  color: #2563eb;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.result h1 {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.result h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.result h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.result p {
+  margin: 0.75rem 0;
+  line-height: 1.6;
+  font-weight: normal;
+}
+
+.result strong {
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.result ul,
+.result ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.result li {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.result code {
+  background-color: #e2e8f0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.result pre {
+  background-color: #e2e8f0;
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.result pre code {
+  background-color: transparent;
+  padding: 0;
 }

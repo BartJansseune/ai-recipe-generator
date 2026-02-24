@@ -4,6 +4,7 @@ import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../amplify/data/resource";
 import outputs from "../amplify_outputs.json";
+import Markdown from "react-markdown";
 import "@aws-amplify/ui-react/styles.css";
 import "./App.css";
 
@@ -91,7 +92,11 @@ function App() {
             <Placeholder size="large" />
           </div>
         ) : (
-          result && <p className="result">{result}</p>
+          result && (
+            <div className="result">
+              <Markdown>{result}</Markdown>
+            </div>
+          )
         )}
       </div>
     </div>

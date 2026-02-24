@@ -25,9 +25,12 @@ export function request(ctx) {
   console.log("=== REQUEST DEBUG ===");
   console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
+  // Amazon Nova model ID for Converse API
+  const modelId = "eu.amazon.nova-2-lite-v1:0";
+
   // Amazon Nova uses the Converse API format
   return {
-    resourcePath: `/model/amazon.nova-2-lite-v1:0/converse`,
+    resourcePath: `/model/${modelId}/converse`,
     method: "POST",
     params: {
       headers: {
@@ -54,16 +57,8 @@ export function response(ctx) {
 
   // Parse the response body
   let parsedBody;
-  try {
-    parsedBody = JSON.parse(ctx.result.body);
-    console.log("Parsed Bedrock response:", JSON.stringify(parsedBody, null, 2));
-  } catch (e) {
-    console.error("Failed to parse Bedrock response:", e);
-    return {
-      body: null,
-      error: `Failed to parse response: ${e.message}`,
-    };
-  }
+  parsedBody = JSON.parse(ctx.result.body);
+  console.log("Parsed Bedrock response:", JSON.stringify(parsedBody, null, 2));
 
   // Check for errors in the response
   if (parsedBody.error) {
@@ -74,28 +69,21 @@ export function response(ctx) {
     };
   }
 
-  // Return full response for debugging
-  return {
-    body: `DEBUG MODE - Full Response:\n${JSON.stringify(parsedBody, null, 2)}`,
-    error: null,
-  };
+  // Amazon Nova Converse API returns output.message.content[0].text
+  if (parsedBody.output && parsedBody.output.message && parsedBody.output.message.content) {
+    const content = parsedBody.output.message.content[0];
+    if (content && content.text) {
+      return {
+        body: content.text,
+        error: null,
+      };
+    }
+  }
 
-  // COMMENTED OUT: Normal parsing logic - uncomment after debugging
-  // // Amazon Nova Converse API returns output.message.content[0].text
-  // if (parsedBody.output && parsedBody.output.message && parsedBody.output.message.content) {
-  //   const content = parsedBody.output.message.content[0];
-  //   if (content && content.text) {
-  //     return {
-  //       body: content.text,
-  //       error: null,
-  //     };
-  //   }
-  // }
-  //
-  // // If we can't find the expected format, return diagnostic info
-  // console.error("Unexpected response format:", parsedBody);
-  // return {
-  //   body: null,
-  //   error: `Unexpected response format. Status: ${parsedBody.stopReason || 'unknown'}`,
-  // };
+  // If we can't find the expected format, return diagnostic info
+  console.error("Unexpected response format:", parsedBody);
+  return {
+    body: null,
+    error: `Unexpected response format. Status: ${parsedBody.stopReason || 'unknown'}`,
+  };
 }
